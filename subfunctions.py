@@ -96,4 +96,19 @@ def add_annot(raw, events):
     
     return raw
     
+# Create a class that will save the filter for real-time use
+
+class BandwidthFilter:
+    def _init_(self, l_freq, h_freq, method):
+        self.l_freq = l_freq
+        self.h_freq = h_freq
+        self.method = method
+        
+class model:
+    def _init_(self, clsf, input_shape, ch_names,bandwidthfilter):
+        self.clsf = clsf
+        self.input_shape = input_shape
+        self.ch_names = ch_names
+        self.bandwidthfilter = bandwidthfilter
+
     
