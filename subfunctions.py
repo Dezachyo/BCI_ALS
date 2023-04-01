@@ -105,10 +105,10 @@ class BandwidthFilter:
         self.method = method
         
 class model:
-    def _init_(self, clsf, input_shape, ch_names,bandwidthfilter):
+    def __init__(self, clsf, input_shape, ch_names,bandwidthfilter):
         self.clsf = clsf
         self.input_shape = input_shape
         self.ch_names = ch_names
         self.bandwidthfilter = bandwidthfilter
 
-    
+   
