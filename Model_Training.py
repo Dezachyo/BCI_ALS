@@ -64,9 +64,9 @@ class model:
 
 #%% -----------------------------Load-----------------------------------
 
-binary_classification = True
-#processed_file_name = 'sub-Synt_ses-Synt_task-3_Class_run-001_eeg'
-processed_file_name = 'or_1304'
+binary_classification = False
+processed_file_name = 'sub-Synt_ses-Synt_task-3_Class_run-001_eeg'
+#processed_file_name = 'or_1304'
 current_path = pathlib.Path().absolute()  
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')
 epochs = mne.read_epochs(data_fname)
@@ -166,8 +166,37 @@ for i,m in enumerate(clfs):
     axs[i].set_title(m)
 plt.show()
 
+#%%------------------------------- Save the selected model------------------------------
+
+pipe = clfs['Vect + LR'] 
+
+pipe.fit(X,y)
+input_shape = X.shape
+ch_names = epochs.ch_names
 
 
+m = model(pipe,input_shape,ch_names,bandwidth_filter)
+
+
+fname = processed_file_name+'_model'
+path_fname = current_path /'Models'/ fname
+
+
+#create a pickle file
+picklefile = open(path_fname, 'wb')
+#pickle the dictionary and write it to file
+pickle.dump(m, picklefile)
+#close the file
+picklefile.close()
+
+#%%
+
+#read the pickle file
+picklefile = open(path_fname, 'rb')
+#unpickle the dataframe
+loaded = pickle.load(picklefile)
+#close file
+picklefile.close()
 
 
 # %%
