@@ -55,17 +55,19 @@ class BandwidthFilter:
         self.method = method
         
 class model:
-    def __init__(self, clsf, input_shape, ch_names,bandwidthfilter):
+    def __init__(self, clsf, input_shape, ch_names,bandwidthfilter,conditions_dict):
         self.clsf = clsf
         self.input_shape = input_shape
         self.ch_names = ch_names
         self.bandwidthfilter = bandwidthfilter
+        self.conditions_dict = conditions_dict
 
 
 #%% -----------------------------Load-----------------------------------
 
 binary_classification = False
-processed_file_name = 'sub-Synt_ses-Synt_task-3_Class_run-001_eeg'
+
+processed_file_name = 'Shahar_3_Class'
 #processed_file_name = 'or_1304'
 current_path = pathlib.Path().absolute()  
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')
@@ -107,11 +109,11 @@ else:
     class_weights = {epochs.event_id['Distractor Trial']:1,epochs.event_id['Target Trial']:4,epochs.event_id['Non-Target Trial']:4}
 
 clfs = OrderedDict()
-clfs['Vect + LR'] = make_pipeline(Vectorizer(), StandardScaler(), LogisticRegression(class_weight=class_weights))
+#clfs['Vect + LR'] = make_pipeline(Vectorizer(), StandardScaler(), LogisticRegression(class_weight=class_weights))
 clfs['Vect + RegLDA'] = make_pipeline(Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
 clfs['Xdawn + RegLDA'] = make_pipeline(Xdawn(2, classes=[1]), Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
 
-clfs['XdawnCov + TS'] = make_pipeline(XdawnCovariances(estimator='oas'), TangentSpace(), LogisticRegression(class_weight=class_weights))
+#clfs['XdawnCov + TS'] = make_pipeline(XdawnCovariances(estimator='oas'), TangentSpace(), LogisticRegression(class_weight=class_weights))
 clfs['XdawnCov + MDM'] = make_pipeline(XdawnCovariances(estimator='oas'), MDM())
 
 
@@ -168,14 +170,14 @@ plt.show()
 
 #%%------------------------------- Save the selected model------------------------------
 
-pipe = clfs['Vect + LR'] 
+pipe = clfs['Vect + RegLDA'] 
 
 pipe.fit(X,y)
 input_shape = X.shape
 ch_names = epochs.ch_names
 
 
-m = model(pipe,input_shape,ch_names,bandwidth_filter)
+m = model(pipe,input_shape,ch_names,bandwidth_filter,conditions_dict)
 
 
 fname = processed_file_name+'_model'

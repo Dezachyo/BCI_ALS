@@ -110,5 +110,5 @@ class model:
         self.input_shape = input_shape
         self.ch_names = ch_names
         self.bandwidthfilter = bandwidthfilter
+        self.conditions_dict = conditions_dict
 
-   
