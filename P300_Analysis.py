@@ -14,7 +14,7 @@ get_ipython().run_line_magic('matplotlib', 'qt')
 from subfunctions import *
 # %%
 #processed_file_name = 'Or_1304'
-processed_file_name = 'sub-Synt_ses-Synt_task-3_Class_run-001_eeg'
+processed_file_name = 'Shahar_3_Class'
 
 current_path = pathlib.Path().absolute()  
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')

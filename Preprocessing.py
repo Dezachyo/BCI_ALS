@@ -24,7 +24,7 @@ from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt')
 # %% -------------------- Read Data -----------------------------------
 
-fname = 'sub-Synt_ses-Synt_task-3_Class_run-001_eeg.xdf'
+fname = 'Shahar_3_Class.xdf'
 current_path = pathlib.Path().absolute()  
 
 ## Recording to XDF
