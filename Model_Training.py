@@ -67,7 +67,7 @@ class model:
 
 binary_classification = False
 
-processed_file_name = 'Shahar_3_Class'
+processed_file_name = 'Omri_2507'
 #processed_file_name = 'or_1304'
 current_path = pathlib.Path().absolute()  
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')
