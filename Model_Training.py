@@ -92,7 +92,7 @@ if binary_classification == True:
 X = epochs.get_data()  # MEG signals: n_epochs, n_meg_channels, n_times
 X = epochs.get_data() * 1e6 # mV
 # Remove baslineperiod
-baseline_duration = -0.2
+baseline_duration = epochs.tmin
 onset_sample = int(np.absolute(baseline_duration) * 125)
 X = X[:,:,onset_sample::]
 
@@ -109,17 +109,10 @@ else:
     class_weights = {epochs.event_id['Distractor Trial']:1,epochs.event_id['Target Trial']:4,epochs.event_id['Non-Target Trial']:4}
 
 clfs = OrderedDict()
-#clfs['Vect + LR'] = make_pipeline(Vectorizer(), StandardScaler(), LogisticRegression(class_weight=class_weights))
+
 clfs['Vect + RegLDA'] = make_pipeline(Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
 clfs['Xdawn + RegLDA'] = make_pipeline(Xdawn(2, classes=[1]), Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
-
-#clfs['XdawnCov + TS'] = make_pipeline(XdawnCovariances(estimator='oas'), TangentSpace(), LogisticRegression(class_weight=class_weights))
 clfs['XdawnCov + MDM'] = make_pipeline(XdawnCovariances(estimator='oas'), MDM())
-
-
-#clfs['ERPCov + TS'] = make_pipeline(ERPCovariances(), TangentSpace(), LogisticRegression())
-#clfs['ERPCov + MDM'] = make_pipeline(ERPCovariances(), MDM())
-
 
 #times = epochs.times
 
@@ -138,23 +131,27 @@ for m in clfs:
 results = pd.DataFrame(data=auc, columns=['AUC'])
 results['Method'] = methods
 
+# Get the most accurate classifier 
+best_clfs_name =  results.groupby('Method', as_index=False)['AUC'].mean().max()['Method']
+
 plt.figure(figsize=[8,4])
 sns.barplot(data=results, x='AUC', y='Method')
+plt.title(f'Most accurate classifer: {best_clfs_name}')
 plt.xlim(0.2, 0.85)
 sns.despine()
+plt.tight_layout()
+plt.show()
 
-#%%
+#%% Fit the models and show confusion matrix
 
 train_ratio = 0.75
 test_ratio = 0.25
 
-# train is now 50% of the entire data set
-X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=1 - train_ratio)
-#Y_train =Y_train - (np.max(Y_train)-1)
-#Y_test =Y_test - (np.max(Y_train)-1)
-fig, axs = plt.subplots(clfs.__len__())
 
-#logisticregression
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=1 - train_ratio)
+fig, axs = plt.subplots(ncols= clfs.__len__() , figsize=(20, 10), sharey='row')
+
+#Train and test the model
 for i,m in enumerate(clfs):
     clfs[m].fit(X_train, Y_train)
     preds_rg  = clfs[m].predict(X_test)
@@ -162,15 +159,17 @@ for i,m in enumerate(clfs):
     acc2         = np.mean(preds_rg == Y_test)
     print(f"{m} Classification accuracy: %f " % (acc2))
     
+    disp = ConfusionMatrixDisplay(confusion_matrix(Y_test,preds_rg),display_labels = sorted(epochs.event_id))
+    disp.plot(ax= axs[i],xticks_rotation=45)
+    disp.im_.colorbar.remove()
     
-    #fig,axs = plt.subplots()
-    ConfusionMatrixDisplay(confusion_matrix(Y_test,preds_rg),display_labels = sorted(epochs.event_id)).plot(ax= axs[i])
     axs[i].set_title(m)
+
 plt.show()
 
 #%%------------------------------- Save the selected model------------------------------
 
-pipe = clfs['Vect + RegLDA'] 
+pipe = clfs[best_clfs_name] 
 
 pipe.fit(X,y)
 input_shape = X.shape
@@ -191,7 +190,7 @@ pickle.dump(m, picklefile)
 #close the file
 picklefile.close()
 
-#%%
+#%% Load the selected model
 
 #read the pickle file
 picklefile = open(path_fname, 'rb')
@@ -200,14 +199,11 @@ loaded = pickle.load(picklefile)
 #close file
 picklefile.close()
 
+# %% Models graveyard Old Models
 
-# %%
 
-fig,axs = plt.subplots()
-ConfusionMatrixDisplay(confusion_matrix(Y_test.argmax(axis = -1),preds)).plot(ax= axs)
-axs.set_title('Title')
+#clfs['Vect + LR'] = make_pipeline(Vectorizer(), StandardScaler(), LogisticRegression(class_weight=class_weights))
+#clfs['ERPCov + TS'] = make_pipeline(ERPCovariances(), TangentSpace(), LogisticRegression())
+#clfs['ERPCov + MDM'] = make_pipeline(ERPCovariances(), MDM())
+#clfs['XdawnCov + TS'] = make_pipeline(XdawnCovariances(estimator='oas'), TangentSpace(), LogisticRegression(class_weight=class_weights))
 
-plt.tight_layout()
-
-clfs['Vect + LR']
-# %%
