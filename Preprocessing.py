@@ -17,14 +17,14 @@ import pickle
 # MNE functions
 import mne
 from mne import Epochs,find_events
-# Custom function
+# Custom function  
 from subfunctions import *
 # For interactive plots
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt')
 # %% -------------------- Read Data -----------------------------------
 
-fname = 'Shahar_3_Class.xdf'
+fname = 'Omri_2507.xdf'
 current_path = pathlib.Path().absolute()  
 
 ## Recording to XDF
@@ -42,7 +42,7 @@ filter_method = 'iir'
 
 selected_filter = BandwidthFilter(LowPass, HighPass, filter_method)
 Raw_Filtered = raw.filter(LowPass, HighPass, method=filter_method)
-
+Raw_Filtered.notch_filter([25])
 print (f'Bandpass filter {filter_method} [{int(LowPass)}-{int(HighPass)} Hz]')
 
 # %% --------------------- Remove bad channels-------------------------------
