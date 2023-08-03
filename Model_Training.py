@@ -100,7 +100,7 @@ y = epochs.events[:, 2]
 #y = y - (max(y)-1) # 0's and 1's instead of 1's and 2's
 conditions_dict =  {v: k for k, v in epochs.event_id.items()}
 
-
+y_labels = [conditions_dict[event_name] for event_name in y]
 
 # %%
 if binary_classification == True:
@@ -144,13 +144,56 @@ plt.show()
 
 #%% Fit the models and show confusion matrix
 
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics import RocCurveDisplay
+from sklearn.metrics import roc_auc_score
+
+
+
 train_ratio = 0.75
 test_ratio = 0.25
 
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=1 - train_ratio)
-fig, axs = plt.subplots(ncols= clfs.__len__() , figsize=(20, 10), sharey='row')
+X_train, X_test, Y_train, Y_test = train_test_split(X, y_labels, test_size=1 - train_ratio)
 
+y_score = clfs['Vect + RegLDA'].fit(X_train, Y_train).predict_proba(X_test)
+
+
+
+label_binarizer = LabelBinarizer().fit(Y_train)
+y_onehot_test = label_binarizer.transform(Y_test)
+
+micro_roc_auc_ovr = roc_auc_score(
+    Y_test,
+    y_score,
+    multi_class="ovr",
+    average="micro",
+)
+
+print(f"Micro-averaged One-vs-Rest ROC AUC score:\n{micro_roc_auc_ovr:.2f}")
+
+
+
+# Show ROC curve for one class (Vs rest)
+
+class_of_interest = "Target Trial"
+class_id = np.flatnonzero(label_binarizer.classes_ == class_of_interest)
+
+RocCurveDisplay.from_predictions(
+    y_onehot_test.ravel(),
+    y_score.ravel(),
+    name=f"{class_of_interest} vs the rest",
+    color="darkorange"
+)
+plt.axis("square")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("One-vs-Rest ROC curves:\nVirginica vs (Setosa & Versicolor)")
+plt.legend()
+plt.show()
+
+
+fig, axs = plt.subplots(ncols= clfs.__len__() , figsize=(20, 10), sharey='row')
 #Train and test the model
 for i,m in enumerate(clfs):
     clfs[m].fit(X_train, Y_train)
