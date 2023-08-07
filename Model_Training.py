@@ -48,13 +48,13 @@ from sklearn.model_selection import train_test_split
 from pyriemann.utils.viz import plot_confusion_matrix
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-class BandwidthFilter:
+class BandwidthFilter: # A class for bandwidth filter
     def __init__(self, l_freq, h_freq, method):
         self.l_freq = l_freq
         self.h_freq = h_freq
         self.method = method
         
-class model:
+class model: # A class holding relevent information regarding thr model
     def __init__(self, clsf, input_shape, ch_names,bandwidthfilter,conditions_dict):
         self.clsf = clsf
         self.input_shape = input_shape
@@ -63,9 +63,9 @@ class model:
         self.conditions_dict = conditions_dict
 
 
-#%% -----------------------------Load-----------------------------------
+#%% -----------------------------Load Data-----------------------------------
 
-binary_classification = False
+binary_classification = False # For non-Target vs Target only
 
 processed_file_name = 'Omri_2507'
 #processed_file_name = 'or_1304'
@@ -73,7 +73,7 @@ current_path = pathlib.Path().absolute()
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')
 epochs = mne.read_epochs(data_fname)
 
-#read the pickle file
+#read the filter file
 picklefile = open(current_path /'Data'/'Processed Data'/ (processed_file_name+'_Filter'), 'rb')
 #unpickle the dataframe
 bandwidth_filter = pickle.load(picklefile)
@@ -89,51 +89,49 @@ if binary_classification == True:
 
 #bandwidth_filter = load(current_path /'Data'/'Processed Data'/ (processed_file_name+'_Filter'))
 # %%
-X = epochs.get_data()  # MEG signals: n_epochs, n_meg_channels, n_times
+X = epochs.get_data()  # EEG signals: n_epochs, n_channels, n_times
 X = epochs.get_data() * 1e6 # mV
 # Remove baslineperiod
-baseline_duration = epochs.tmin
+baseline_duration = epochs.tmin # get the baseline period
 onset_sample = int(np.absolute(baseline_duration) * 125)
 X = X[:,:,onset_sample::]
 
-y = epochs.events[:, 2]  
-#y = y - (max(y)-1) # 0's and 1's instead of 1's and 2's
-conditions_dict =  {v: k for k, v in epochs.event_id.items()}
+y = epochs.events[:, 2]   # get lables for classification 
+
+conditions_dict =  {v: k for k, v in epochs.event_id.items()} # Map labels to strings 
 
 
 
-# %%
+# %%  --------------------------- Models creations and cross validation ------------------------
 if binary_classification == True:
     class_weights = dict.fromkeys(conditions_dict, 0.5)
 else:
     class_weights = {epochs.event_id['Distractor Trial']:1,epochs.event_id['Target Trial']:4,epochs.event_id['Non-Target Trial']:4}
 
-clfs = OrderedDict()
+clfs = OrderedDict() # holds all the models as a dict
 
 clfs['Vect + RegLDA'] = make_pipeline(Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
 clfs['Xdawn + RegLDA'] = make_pipeline(Xdawn(2, classes=[1]), Vectorizer(), LDA(shrinkage='auto', solver='eigen'))
 clfs['XdawnCov + MDM'] = make_pipeline(XdawnCovariances(estimator='oas'), MDM())
 
-#times = epochs.times
-
-
 # define cross validation
-cv = StratifiedShuffleSplit(n_splits=10, test_size=0.25, random_state=42)
+cv = StratifiedShuffleSplit(n_splits=10, test_size=0.25, random_state=42) # 10-folds cross-validation
 
 # run cross validation for each pipeline
 auc = []
 methods = []
 for m in clfs:
-    res = cross_val_score(clfs[m], X, y==epochs.event_id['Target Trial'], scoring='roc_auc', cv=cv, n_jobs=-1)
+    res = cross_val_score(clfs[m], X, y==epochs.event_id['Target Trial'], scoring='roc_auc', cv=cv, n_jobs=-1) # get the results 
     auc.extend(res)
     methods.extend([m]*len(res))
 
-results = pd.DataFrame(data=auc, columns=['AUC'])
+results = pd.DataFrame(data=auc, columns=['AUC']) # make a data frame out of the results
 results['Method'] = methods
 
 # Get the most accurate classifier 
 best_clfs_name =  results.groupby('Method', as_index=False)['AUC'].mean().max()['Method']
 
+# Plot AUC
 plt.figure(figsize=[8,4])
 sns.barplot(data=results, x='AUC', y='Method')
 plt.title(f'Most accurate classifer: {best_clfs_name}')
@@ -148,18 +146,18 @@ train_ratio = 0.75
 test_ratio = 0.25
 
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=1 - train_ratio)
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=1 - train_ratio) # splits for train and test
 fig, axs = plt.subplots(ncols= clfs.__len__() , figsize=(20, 10), sharey='row')
 
 #Train and test the model
 for i,m in enumerate(clfs):
-    clfs[m].fit(X_train, Y_train)
-    preds_rg  = clfs[m].predict(X_test)
+    clfs[m].fit(X_train, Y_train) # fit the model
+    preds_rg  = clfs[m].predict(X_test) # get predictions
     # Printing the results
     acc2         = np.mean(preds_rg == Y_test)
     print(f"{m} Classification accuracy: %f " % (acc2))
     
-    disp = ConfusionMatrixDisplay(confusion_matrix(Y_test,preds_rg),display_labels = sorted(epochs.event_id))
+    disp = ConfusionMatrixDisplay(confusion_matrix(Y_test,preds_rg),display_labels = sorted(epochs.event_id)) # disply confution matrix
     disp.plot(ax= axs[i],xticks_rotation=45)
     disp.im_.colorbar.remove()
     

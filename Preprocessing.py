@@ -24,7 +24,7 @@ from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt')
 # %% -------------------- Read Data -----------------------------------
 
-fname = 'Omri_2507.xdf'
+fname = 'Omri_2507.xdf' # file name
 current_path = pathlib.Path().absolute()  
 
 ## Recording to XDF
@@ -49,12 +49,12 @@ print (f'Bandpass filter {filter_method} [{int(LowPass)}-{int(HighPass)} Hz]')
 
 Raw_Filtered.plot()
 # %% --------------------- Epoching-------------------------------
-Raw_Filtered.drop_channels(Raw_Filtered.info['bads'])
-Raw_Filtered.set_eeg_reference(ref_channels='average')
-events_from_annot, event_dict = mne.events_from_annotations(Raw_Filtered)
+Raw_Filtered.drop_channels(Raw_Filtered.info['bads']) # drop bad channels
+Raw_Filtered.set_eeg_reference(ref_channels='average') # rereferance to average referance
+events_from_annot, event_dict = mne.events_from_annotations(Raw_Filtered) # read markers
 if 'Break' in event_dict:
     event_dict.pop('Break')
-epochs = mne.Epochs(Raw_Filtered, events_from_annot, tmin=-0.2, tmax=0.5, event_id=event_dict,detrend=1,baseline= (-0.2,0), preload = True)
+epochs = mne.Epochs(Raw_Filtered, events_from_annot, tmin=-0.2, tmax=0.5, event_id=event_dict,detrend=1,baseline= (-0.2,0), preload = True) # make epochs around the events and baseline correct
 # %% --------------------- Drop Noisy Epochs-------------------------------
 epochs.plot()
 # %% --------------------- Verify cleaned epochs (optional)
@@ -62,7 +62,7 @@ fig, ax = plt.subplots(3,2)
 
 epochs['Target Trial'].plot_image(picks='eeg', combine='mean',axes=ax[:,0],title="Target")
 epochs['Non-Target Trial'].plot_image(picks='eeg', combine='mean',axes=ax[:,1],title="Non-Target Trial")
-# %%
+# %% ---------------------- Save preprocced file as .fif ----------
 fif_export_path = current_path/'Data'/'Processed Data'/f'{fname[:-4]}_Processed.fif'
 epochs.save(fif_export_path,overwrite=True)
 bwfilter_export_path = current_path/'Data'/'Processed Data'/f'{fname[:-4]}_Filter'

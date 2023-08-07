@@ -12,14 +12,14 @@ import matplotlib.pyplot as plt
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt')
 from subfunctions import *
-# %%
-#processed_file_name = 'Or_1304'
+# %% Read Preprocessed data
+
 processed_file_name = 'Omri_2507'
 
 current_path = pathlib.Path().absolute()  
 data_fname = current_path /'Data'/'Processed Data'/ (processed_file_name + '_Processed.fif')
 epochs = mne.read_epochs(data_fname)
-epochs
+epochs # print info 
 
 # %% -------------------------Create Evokeds dict for plotting
 
@@ -30,7 +30,7 @@ distractor_evoked = epochs['Distractor Trial'].average()
 evokeds = dict(nontarget=nontarget_evoked, target=target_evoked,distractor =distractor_evoked)
 
 
-# %% --------------------- Verify cleaned epochs (optional)
+# %% --------------------- Verify cleaned epochs (optional)---------------------------------
 fig, ax = plt.subplots(3,2)
 
 epochs['Target Trial'].plot_image(picks='eeg', combine='mean',axes=ax[:,0],title="Target")
@@ -39,7 +39,7 @@ epochs['Non-Target Trial'].plot_image(picks='eeg', combine='mean',axes=ax[:,1],t
 plt.show()
 
 
-# %% --------------------------- Evoked in diffrent plots
+# %% --------------------------- Evoked in diffrent plots -----------------------------
 fig, ax = plt.subplots(2)
 
 P300_window = [0.25,0.4]
